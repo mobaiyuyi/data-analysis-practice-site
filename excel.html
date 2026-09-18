@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Excel 模块 · mobai训练</title>
+<link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+  <canvas id="sakuraCanvas"></canvas>
+
+  <div class="container">
+    <nav class="glass">
+      <div class="nav-title"><a href="index.html">mobai训练</a></div>
+      <div class="nav-buttons">
+        <button class="btn btn-primary" id="btn-continue" type="button">继续练习</button>
+        <button class="btn btn-secondary" id="btn-home" type="button">回首页</button>
+      </div>
+    </nav>
+
+    <section class="page-head glass">
+      <h1>Excel 模块 · 云栖茶饮</h1>
+      <p>
+        10 道题，每题一个考点，前后连成一条线：先认出脏数据，再学会锁定参数、按条件求和、分档、
+        拼表、反查、拆编号、算日期，最后给一张会被填错的表加防呆。
+        判分看三件事：算对了吗、用对工具了吗、能不能维护（引用结构对不对）。
+      </p>
+      <div class="progress-outer"><div class="progress-inner" id="progress-inner"></div></div>
+      <div class="progress-note" id="progress-note">正在读取进度……</div>
+    </section>
+
+    <div id="stages"></div>
+
+    <section class="io-panel glass">
+      <h2>进度导出 / 导入</h2>
+      <p>
+        进度只存在这台电脑的浏览器里。换设备时先「导出」，把文本复制到新设备再「导入」；
+        也可以把这段文本交给 AI，让它按错题分布决定下一批题出什么。
+      </p>
+      <textarea id="io-text" spellcheck="false" placeholder="点「导出」会在这里生成一段 JSON；要导入就把 JSON 粘进来再点「导入」。"></textarea>
+      <div class="io-actions">
+        <button class="btn btn-secondary" id="btn-export" type="button">导出</button>
+        <button class="btn btn-secondary" id="btn-import" type="button">导入</button>
+        <span class="io-msg" id="io-msg"></span>
+      </div>
+    </section>
+  </div>
+
+  <script src="assets/sakura.js"></script>
+  <script src="js/formula/utils.js"></script>
+  <script src="js/progress.js"></script>
+  <script src="data/universe.js"></script>
+  <script src="data/cards.js"></script>
+  <script src="data/exercises.js"></script>
+  <script src="js/page-module.js"></script>
+</body>
+</html>

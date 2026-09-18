@@ -1,0 +1,1734 @@
+/* mobai训练 · 样式基线
+ * 沿用模板 test.html 的洛樱风格：毛玻璃卡片、樱花粒子、深色遮底�? * 新增：技能树、知识点卡、判分结果、自研表格�? */
+
+/* 霞鹜文楷 屏幕阅读版（LXGW WenKai Screen）——开源字体（SIL OFL 1.1），与参考站同款。
+ * 自带 97 个 unicode-range 子集，浏览器只会下载页面实际用到的那几个，不用整包加载 */
+@import url("https://cdn.jsdelivr.net/npm/lxgw-wenkai-screen-webfont@1.7.0/lxgwwenkaiscreen.css");
+
+:root {
+  --glass: rgba(255, 255, 255, 0.1);
+  --glass-line: rgba(255, 255, 255, 0.18);
+  --panel: rgba(14, 18, 38, 0.55);
+  --panel-solid: rgba(18, 21, 40, 0.96);
+  --ink: #ffffff;
+  --ink-dim: rgba(255, 255, 255, 0.78);
+  --ink-faint: rgba(255, 255, 255, 0.55);
+  --accent: #ffb6c8;
+  --ok: #7ee2a8;
+  --bad: #ff9aa8;
+  --warn: #ffd479;
+  --mono: "JetBrains Mono", "Fira Code", Consolas, "Courier New", monospace;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  min-height: 100vh;
+  font-family: "LXGW WenKai Screen", "PingFang SC", "Microsoft YaHei",
+    "Hiragino Sans GB", "Helvetica Neue", Arial, sans-serif;
+  color: var(--ink);
+  /* 图床挂了也要有深色兜底，否则白底白字完全没法�?*/
+  background-image: url("https://t.alcy.cc/pc"),
+    linear-gradient(160deg, #1b1436 0%, #2a1b3d 45%, #3a1f38 100%);
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  background-color: #201835;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 12, 24, 0.35);
+  z-index: -2;
+  pointer-events: none;
+}
+
+/* 练题页要盯着表格看，遮底压得更暗一�?*/
+body.is-workspace::before {
+  background: rgba(10, 12, 24, 0.6);
+}
+
+#sakuraCanvas {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.container {
+  max-width: 1160px;
+  margin: 0 auto;
+  padding: 0 20px;
+  position: relative;
+  z-index: 2;
+}
+
+.container.is-wide {
+  max-width: 1400px;
+}
+
+/* 练习页要摆得下整张表�?+ 两侧栏，容器比内容页宽出一�?*/
+.container.is-workspace {
+  max-width: 1760px;
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* ---------- 毛玻璃卡�?---------- */
+
+.glass {
+  background: var(--glass);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--glass-line);
+  border-radius: 16px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+}
+
+/* ---------- 导航 ---------- */
+
+nav.glass {
+  margin: 24px auto;
+  padding: 14px 22px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.nav-title {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.nav-title a {
+  color: var(--ink);
+}
+
+.nav-buttons {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.btn {
+  padding: 9px 18px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  font-size: 15px;
+  font-family: inherit;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.08);
+  transition: background 0.25s ease, transform 0.2s ease;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+}
+
+.btn-primary {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.btn-primary:hover {
+  background: rgba(255, 255, 255, 0.32);
+}
+
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+/* 链接当按钮用时（考点行的「开始练习」） */
+a.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+
+a.btn:hover {
+  text-decoration: none;
+}
+
+.btn-ghost {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  padding: 7px 14px;
+  font-size: 14px;
+}
+
+.btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.btn[disabled] {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ---------- 首页 ---------- */
+
+.hero {
+  margin: 56px 0 48px;
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 28px;
+  align-items: center;
+}
+
+.hero-text {
+  padding: 30px;
+  border-radius: 18px;
+  background: rgba(10, 14, 30, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.hero-title {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.strawberry-flower {
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+}
+
+/* 首页标题：深色实心字，强调词交给 .grad 单独做渐变裁字（浅底主题） */
+.hero h1 {
+  font-size: 48px;
+  line-height: 1.15;
+  font-weight: 800;
+  margin-bottom: 0;
+  color: #1a1a2e;
+  background: none;
+  -webkit-background-clip: border-box;
+  background-clip: border-box;
+  -webkit-text-fill-color: #1a1a2e;
+  text-shadow: none;
+}
+
+.hero h1 .grad {
+  background: linear-gradient(100deg, #ff2d57 0%, #ff5a80 55%, #ff3b62 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+.hero .sub {
+  font-size: 20px;
+  color: var(--ink-dim);
+  margin-bottom: 26px;
+  line-height: 1.75;
+}
+
+/* ---------- 首页代码面板（参考编辑器风格） ---------- */
+
+.code-panel {
+  border-radius: 14px;
+  overflow: hidden;
+  background: #0d1117;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.code-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px;
+  background: rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 13px;
+}
+
+.code-panel-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink-dim);
+}
+
+.code-panel-lang {
+  color: var(--ink-faint);
+  font-size: 12px;
+  font-family: var(--mono);
+}
+
+.dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.dot-red { background: #ff5f56; }
+.dot-amber { background: #ffb152; }
+.dot-green { background: #28c73f; }
+
+.code-panel pre,
+.code-panel code {
+  white-space: pre;
+  font-family: var(--mono);
+  font-size: 15px;
+  line-height: 1.7;
+  color: #c9d1d9;
+  padding: 22px;
+  margin: 0;
+  overflow-x: auto;
+}
+
+.code-panel code {
+  display: block;
+  width: 100%;
+}
+
+/* 让关键字等关键信息在代码块内高亮 */
+.code-panel code .kw { color: #7ee0ff; }
+.code-panel code .fn { color: #ffa6c9; }
+.code-panel code .str { color: #a5d99f; }
+.code-panel code .cmt { color: #6a737d; }
+.code-panel code .num { color: #ffae70; }
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
+  margin-bottom: 48px;
+}
+
+.stat-card {
+  padding: 30px 20px;
+  text-align: center;
+}
+
+.stat-num {
+  font-size: 46px;
+  font-weight: 800;
+  margin-bottom: 8px;
+  background: linear-gradient(180deg, #ff5a80 0%, #ff2d57 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-fill-color: transparent;
+  text-shadow: none;
+}
+
+.stat-label {
+  font-size: 16px;
+  color: var(--ink-dim);
+}
+
+.features {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+  margin-bottom: 48px;
+}
+
+.feature-card {
+  padding: 28px;
+  display: block;
+  color: var(--ink);
+}
+
+.feature-card h3 {
+  font-size: 20px;
+  margin-bottom: 12px;
+  font-weight: 700;
+}
+
+.feature-card p {
+  font-size: 16px;
+  color: var(--ink-dim);
+  line-height: 1.8;
+}
+
+.feature-card.is-locked {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.feature-card.is-locked:hover {
+  text-decoration: none;
+}
+
+.tag {
+  display: inline-block;
+  font-size: 12px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  margin-left: 8px;
+  vertical-align: middle;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: var(--ink-dim);
+}
+
+.tag.is-live {
+  border-color: rgba(126, 226, 168, 0.5);
+  color: var(--ok);
+}
+
+.cta {
+  padding: 38px;
+  text-align: center;
+  margin-bottom: 48px;
+}
+
+.cta h2 {
+  font-size: 32px;
+  margin-bottom: 16px;
+}
+
+.cta p {
+  color: var(--ink-dim);
+  font-size: 17px;
+  margin-bottom: 24px;
+}
+
+/* ---------- 模块�?---------- */
+
+.page-head {
+  padding: 28px 30px;
+  margin-bottom: 22px;
+}
+
+.page-head h1 {
+  font-size: 30px;
+  margin-bottom: 10px;
+}
+
+.page-head p {
+  color: var(--ink-dim);
+  line-height: 1.75;
+  font-size: 15px;
+}
+
+.progress-outer {
+  margin-top: 18px;
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  overflow: hidden;
+}
+
+.progress-inner {
+  height: 100%;
+  width: 0;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent), #ffd7e2);
+  transition: width 0.4s ease;
+}
+
+.progress-note {
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--ink-faint);
+}
+
+.stage-block {
+  margin-bottom: 22px;
+  padding: 20px 24px;
+}
+
+.stage-block h2 {
+  font-size: 17px;
+  margin-bottom: 14px;
+  letter-spacing: 0.5px;
+  color: var(--accent);
+}
+
+.stage-empty {
+  font-size: 14px;
+  color: var(--ink-faint);
+}
+
+.topic-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto;
+  gap: 14px;
+  align-items: center;
+  padding: 14px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.topic-row:first-of-type {
+  border-top: none;
+}
+
+.topic-name {
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.topic-name span {
+  display: block;
+  font-size: 13px;
+  color: var(--ink-faint);
+  margin-top: 3px;
+}
+
+.chip {
+  font-size: 12px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: var(--ink-dim);
+  white-space: nowrap;
+}
+
+.chip.is-done {
+  border-color: rgba(126, 226, 168, 0.5);
+  color: var(--ok);
+}
+
+.chip.is-doing {
+  border-color: rgba(255, 212, 121, 0.5);
+  color: var(--warn);
+}
+
+.topic-attempts {
+  font-size: 13px;
+  color: var(--ink-faint);
+  white-space: nowrap;
+}
+
+.topic-card {
+  grid-column: 1 / -1;
+  padding: 16px 18px;
+  margin-bottom: 6px;
+  border-radius: 12px;
+  background: rgba(10, 14, 30, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  display: none;
+}
+
+.topic-card.is-open {
+  display: block;
+}
+
+.topic-card h4 {
+  font-size: 15px;
+  margin-bottom: 10px;
+}
+
+.topic-card p {
+  font-size: 14px;
+  line-height: 1.8;
+  color: var(--ink-dim);
+  white-space: pre-wrap;
+}
+
+.topic-card ul {
+  margin: 12px 0 0 18px;
+  font-size: 14px;
+  line-height: 1.8;
+  color: var(--ink-dim);
+}
+
+.io-panel {
+  padding: 24px;
+  margin-bottom: 48px;
+}
+
+.io-panel h2 {
+  font-size: 17px;
+  margin-bottom: 10px;
+}
+
+.io-panel p {
+  font-size: 14px;
+  color: var(--ink-dim);
+  line-height: 1.75;
+  margin-bottom: 14px;
+}
+
+.io-panel textarea {
+  width: 100%;
+  min-height: 130px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(10, 14, 30, 0.5);
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.6;
+  resize: vertical;
+}
+
+.io-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+.io-msg {
+  font-size: 13px;
+  color: var(--warn);
+}
+
+/* ---------- 练习�?---------- */
+
+.exercise-head {
+  padding: 20px 24px;
+  margin-bottom: 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.exercise-head h1 {
+  font-size: 22px;
+}
+
+.exercise-head .meta {
+  font-size: 13px;
+  color: var(--ink-faint);
+  margin-top: 6px;
+}
+
+.workspace {
+  display: grid;
+  /* 左栏只放题面，窄一点；表格吃掉剩下的全部宽�?*/
+  grid-template-columns: 320px minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+  margin-bottom: 48px;
+}
+
+.panel {
+  padding: 18px 20px;
+}
+
+.panel h2 {
+  font-size: 16px;
+  margin-bottom: 10px;
+  color: var(--accent);
+}
+
+.panel p {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  font-size: 14px;
+  line-height: 1.85;
+  color: var(--ink-dim);
+}
+
+.side {
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.side > * {
+  margin-bottom: 16px;
+}
+
+.side > *:last-child {
+  margin-bottom: 0;
+}
+
+.steps {
+  margin: 6px 0 0 18px;
+  font-size: 14px;
+  line-height: 1.9;
+  color: var(--ink-dim);
+}
+
+details.card-details {
+  padding: 0;
+  overflow: hidden;
+}
+
+details.card-details > summary {
+  cursor: pointer;
+  padding: 16px 22px;
+  font-size: 15px;
+  list-style: none;
+  color: var(--accent);
+}
+
+details.card-details > summary::-webkit-details-marker {
+  display: none;
+}
+
+details.card-details > summary::before {
+  content: "�?";
+}
+
+details.card-details[open] > summary::before {
+  content: "�?";
+}
+
+details.card-details .card-body {
+  padding: 0 22px 20px;
+  font-size: 14px;
+  line-height: 1.85;
+  color: var(--ink-dim);
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+details.card-details .card-body h4 {
+  color: var(--ink);
+  font-size: 14px;
+  margin: 16px 0 8px;
+}
+
+details.card-details .card-body pre {
+  font-family: var(--mono);
+  font-size: 12.5px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  background: rgba(10, 14, 30, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 10px;
+  padding: 12px 14px;
+  color: #eaf6ff;
+}
+
+details.card-details .card-body ul {
+  margin-left: 18px;
+  line-height: 1.85;
+}
+
+.submit-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.check-list {
+  margin-top: 16px;
+}
+
+.check-item {
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(10, 14, 30, 0.4);
+  margin-bottom: 10px;
+}
+
+.check-item .check-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 13px;
+  align-items: baseline;
+}
+
+.check-item .check-label {
+  font-size: 14px;
+}
+
+.check-item .check-target {
+  color: var(--ink-faint);
+  font-family: var(--mono);
+  font-size: 12px;
+}
+
+.check-item .check-msg {
+  font-size: 13.5px;
+  line-height: 1.8;
+  margin-top: 8px;
+  color: var(--ink-dim);
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.check-item .check-hint {
+  font-size: 13px;
+  line-height: 1.8;
+  margin-top: 8px;
+  padding-left: 10px;
+  border-left: 3px solid var(--warn);
+  color: var(--warn);
+}
+
+.check-item.is-pass {
+  border-color: rgba(126, 226, 168, 0.45);
+}
+
+.check-item.is-pass .check-label {
+  color: var(--ok);
+}
+
+.check-item.is-fail {
+  border-color: rgba(255, 154, 168, 0.45);
+}
+
+.check-item.is-fail .check-label {
+  color: var(--bad);
+}
+
+.result-banner {
+  padding: 14px 16px;
+  border-radius: 12px;
+  font-size: 14px;
+  line-height: 1.8;
+  margin-top: 14px;
+}
+
+.result-banner.is-pass {
+  background: rgba(126, 226, 168, 0.16);
+  border: 1px solid rgba(126, 226, 168, 0.4);
+}
+
+.result-banner.is-fail {
+  background: rgba(255, 154, 168, 0.14);
+  border: 1px solid rgba(255, 154, 168, 0.35);
+}
+
+.next-link {
+  margin-top: 12px;
+  display: inline-block;
+}
+
+.mobile-note {
+  display: none;
+  padding: 22px 24px;
+  font-size: 14px;
+  line-height: 1.9;
+  color: var(--ink-dim);
+}
+
+/* ---------- 自研表格：暗色玻璃外�?+ 浅色工作�?---------- */
+
+.sheet {
+  padding: 0;
+  overflow: hidden;
+  background: rgba(14, 18, 38, 0.72);
+  /* 表格区钉回系统字体：文楷是楷体，套上去就不像 Excel 了 */
+  font-family: "Microsoft YaHei", "Segoe UI", system-ui, sans-serif;
+}
+
+.ribbon-slot {
+  display: block;
+}
+
+/* --- 功能�?--- */
+
+.ribbon {
+  background: #f4f5f9;
+  color: #2b3048;
+  border-bottom: 1px solid #d6dae6;
+}
+
+.rb-tabs {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0 8px;
+  border-bottom: 1px solid #e1e5ef;
+}
+
+.rb-tab {
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  padding: 8px 11px;
+  font-family: inherit;
+  font-size: 13px;
+  color: #3a4058;
+  cursor: pointer;
+}
+
+.rb-tab:hover {
+  background: rgba(90, 120, 220, 0.09);
+}
+
+.rb-tab.is-active {
+  color: #2f5fd0;
+  border-bottom-color: #2f5fd0;
+}
+
+.rb-tab-hint {
+  margin-left: auto;
+  font-size: 12px;
+  color: #98a0b6;
+}
+
+.rb-body {
+  display: flex;
+  align-items: stretch;
+  padding: 5px 6px 2px;
+  overflow-x: auto;
+}
+
+.rb-group {
+  display: flex;
+  flex-direction: column;
+  padding: 0 8px;
+  border-right: 1px solid #e3e7f1;
+}
+
+.rb-group:last-child {
+  border-right: none;
+}
+
+.rb-group-items {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex: 1;
+}
+
+.rb-group-label {
+  font-size: 11px;
+  color: #98a0b6;
+  text-align: center;
+  padding-top: 2px;
+}
+
+.rb-btn {
+  font-family: inherit;
+  font-size: 12.5px;
+  line-height: 1.4;
+  padding: 4px 8px;
+  min-height: 26px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: transparent;
+  color: #2b3048;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.rb-btn:hover {
+  background: #e6eaf6;
+  border-color: #cdd5ea;
+}
+
+.rb-btn.is-on {
+  background: #d9e2fb;
+  border-color: #9db4ee;
+  color: #1f45a8;
+}
+
+.rb-btn[disabled] {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.rb-btn.rb-disabled {
+  color: #a8aebe;
+}
+
+.rb-b {
+  font-weight: 700;
+}
+
+.rb-i {
+  font-style: italic;
+}
+
+.rb-u {
+  text-decoration: underline;
+}
+
+.rb-sep {
+  display: inline-block;
+  width: 1px;
+  height: 20px;
+  background: #e0e4ef;
+  margin: 0 3px;
+}
+
+.rb-select {
+  font-family: inherit;
+  font-size: 12.5px;
+  padding: 3px 6px;
+  border: 1px solid #cdd5ea;
+  border-radius: 5px;
+  background: #fff;
+  color: #2b3048;
+  max-width: 136px;
+}
+
+.rb-color {
+  width: 30px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid #cdd5ea;
+  border-radius: 5px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.rb-labeled {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.rb-label-text {
+  font-size: 12px;
+  color: #4a5068;
+}
+
+.rb-note {
+  display: none;
+  padding: 13px 16px 15px;
+  font-size: 13px;
+  line-height: 1.85;
+  color: #4a5068;
+}
+
+/* --- 名称�?+ fx --- */
+
+.sheet-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-bottom: 1px solid #d6dae6;
+  background: #f4f5f9;
+}
+
+.sheet-addr {
+  width: 96px;
+  padding: 4px 8px;
+  border: 1px solid #cdd5ea;
+  border-radius: 4px;
+  background: #fff;
+  color: #2b3048;
+  font-family: var(--mono);
+  font-size: 12.5px;
+  text-align: center;
+}
+
+.sheet-bar-sep {
+  color: #9aa2b8;
+  font-size: 12px;
+}
+
+.sheet-fx {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: #5b6379;
+  font-style: italic;
+}
+
+.sheet-formula {
+  flex: 1;
+  min-width: 120px;
+  padding: 4px 10px;
+  border: 1px solid #cdd5ea;
+  border-radius: 4px;
+  background: #fff;
+  color: #1d2136;
+  font-family: var(--mono);
+  font-size: 12.5px;
+}
+
+.sheet-formula:focus,
+.sheet-addr:focus {
+  outline: 2px solid #8fb0f5;
+  outline-offset: -1px;
+}
+
+.sheet-tip {
+  padding: 6px 12px;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: #5b6379;
+  background: #fbfbfe;
+  border-bottom: 1px solid #e3e7f1;
+  min-height: 28px;
+}
+
+.sheet-tip.is-warn {
+  color: #a2511f;
+  background: #fff7ef;
+}
+
+/* --- 网格 --- */
+
+.sheet-body {
+  position: relative;
+}
+
+.sheet-grid {
+  position: relative;
+  /* 表格尽量吃掉一屏的高度，剩下的交给页面滚动 */
+  max-height: calc(100vh - 260px);
+  min-height: 400px;
+  overflow: auto;
+  background: #fff;
+  outline: none;
+}
+
+.sheet-note {
+  display: none;
+  min-height: 400px;
+  padding: 18px 22px;
+  background: #fff;
+  color: #2b3048;
+  font-size: 13.5px;
+  line-height: 1.9;
+}
+
+.sheet-note h3 {
+  font-size: 15px;
+  margin-bottom: 10px;
+  color: #2f5fd0;
+}
+
+.sheet-note p {
+  margin-bottom: 10px;
+}
+
+.sheet-table {
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: fixed;
+  font-size: 13px;
+  color: #1d2136;
+  --sheet-row-height: 28px;
+}
+
+.sheet-table th,
+.sheet-table td {
+  height: var(--sheet-row-height);
+  padding: 2px 8px;
+  border-right: 1px solid #dfe3ee;
+  border-bottom: 1px solid #dfe3ee;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+  font-weight: 400;
+  user-select: none;
+}
+
+.sheet-table td.is-wrap {
+  white-space: normal;
+  word-break: break-all;
+}
+
+.sheet-colhead,
+.sheet-rowhead {
+  background: #eef0f7;
+  color: #4a5068;
+  font-size: 12px;
+  text-align: center;
+  cursor: pointer;
+}
+
+.sheet-colhead {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+}
+
+.sheet-rowhead {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  width: 42px;
+}
+
+.sheet-corner {
+  background: #eef0f7;
+  position: sticky;
+  left: 0;
+  top: 0;
+  z-index: 5;
+  cursor: pointer;
+}
+
+.sheet-colhead.is-hot,
+.sheet-rowhead.is-hot {
+  background: #dfe7fb;
+  color: #1f45a8;
+  font-weight: 600;
+}
+
+.sheet-col-resize {
+  position: absolute;
+  top: 0;
+  right: -3px;
+  width: 7px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 4;
+}
+
+body.is-col-resizing {
+  cursor: col-resize;
+}
+
+body.is-fill-dragging {
+  cursor: crosshair;
+}
+
+.sheet-cell {
+  background: #fff;
+}
+
+.sheet-cell.is-num {
+  text-align: right;
+}
+
+.sheet-cell.is-date {
+  text-align: right;
+}
+
+.sheet-cell.is-bold {
+  font-weight: 700;
+}
+
+.sheet-cell.is-italic {
+  font-style: italic;
+}
+
+.sheet-cell.is-underline {
+  text-decoration: underline;
+}
+
+.sheet-cell.is-ro {
+  background: #f1f3f9;
+  color: #4a5268;
+}
+
+.sheet-cell.is-err {
+  color: #c2364b;
+}
+
+.sheet-cell.is-sel {
+  background: #eaf1fb;
+}
+
+.sheet-cell.is-ro-sel {
+  background: #eceff6;
+}
+
+.sheet-cell.is-active {
+  box-shadow: inset 0 0 0 2px #2f6fdb;
+}
+
+/* --- 填充�?/ 拖动预览 --- */
+
+.sheet-fill-handle {
+  position: absolute;
+  /* 透明命中�?14×14，里面画一�?7px 的小方块：视觉与 Excel 一致，但鼠标不用抖 */
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  background: transparent;
+  cursor: crosshair;
+  z-index: 6;
+  display: none;
+}
+
+.sheet-fill-handle::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 7px;
+  height: 7px;
+  margin: -3.5px 0 0 -3.5px;
+  background: #2f6fdb;
+  border: 1px solid #fff;
+  box-sizing: border-box;
+}
+
+.sheet-fill-preview {
+  position: absolute;
+  border: 2px dashed #6b7fd7;
+  background: rgba(120, 140, 220, 0.1);
+  pointer-events: none;
+  z-index: 4;
+}
+
+.sheet-fill-bubble,
+.sheet-ref-bubble {
+  position: absolute;
+  padding: 2px 8px;
+  background: #333a52;
+  color: #fff;
+  font-size: 12px;
+  line-height: 1.6;
+  border-radius: 4px;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 7;
+}
+
+/* --- 公式点选引用时的虚线框 --- */
+
+.sheet-ref-box {
+  position: absolute;
+  border: 2px solid #2f6fdb;
+  background: rgba(47, 111, 219, 0.08);
+  pointer-events: none;
+  z-index: 4;
+}
+
+.sheet-editor {
+  position: absolute;
+  z-index: 8;
+  padding: 2px 8px;
+  border: 2px solid #2f6fdb;
+  border-radius: 2px;
+  background: #fff;
+  color: #1d2136;
+  font-family: inherit;
+  font-size: 13px;
+}
+
+/* --- 右键菜单 --- */
+
+.sheet-menu {
+  position: fixed;
+  z-index: 60;
+  min-width: 148px;
+  padding: 4px;
+  background: #fff;
+  border: 1px solid #cdd5ea;
+  border-radius: 8px;
+  box-shadow: 0 12px 30px rgba(20, 25, 50, 0.22);
+  /* 右键菜单挂在 body 上，不继承 .sheet 的字体，这里单独钉一次 */
+  font-family: "Microsoft YaHei", "Segoe UI", system-ui, sans-serif;
+}
+
+.sheet-menu-item {
+  display: block;
+  width: 100%;
+  padding: 7px 12px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #2b3048;
+  font-family: inherit;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.sheet-menu-item:hover {
+  background: #eaf1fb;
+}
+
+.sheet-menu-sep {
+  height: 1px;
+  margin: 4px 6px;
+  background: #e3e7f1;
+}
+
+/* --- 状态栏 / 工作表标�?--- */
+
+.sheet-status {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 4px 12px;
+  background: #f4f5f9;
+  border-top: 1px solid #d6dae6;
+  font-size: 12px;
+  color: #5b6379;
+}
+
+.sheet-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 4px 10px 0;
+  background: #f4f5f9;
+  border-top: 1px solid #e3e7f1;
+}
+
+.sheet-tab {
+  padding: 5px 14px;
+  border: 1px solid #d6dae6;
+  border-bottom: none;
+  border-radius: 6px 6px 0 0;
+  background: #e9ecf5;
+  color: #4a5068;
+  font-family: inherit;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+
+.sheet-tab.is-active {
+  background: #fff;
+  color: #2f5fd0;
+  font-weight: 600;
+}
+
+/* ---------- 练习页：整页一屏，页面本身不滚 ----------
+ * 上下页面结构固定高度，中间的工作�?flex:1 吃掉剩下的空间，
+ * 表格再在这个空间里自己滚。这样打开就是完整一屏，不用先往下滚�? */
+
+@media (min-width: 1024px) {
+  body.is-workspace {
+    height: 100vh;
+  }
+
+  .container.is-workspace {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .container.is-workspace > nav.glass {
+    flex: none;
+    margin: 14px 0 10px;
+    padding: 10px 18px;
+  }
+
+  .container.is-workspace > .exercise-head {
+    flex: none;
+    padding: 14px 18px;
+    margin-bottom: 10px;
+  }
+
+  .container.is-workspace > .exercise-head h1 {
+    font-size: 20px;
+  }
+
+  .container.is-workspace > .workspace {
+    flex: 1 1 auto;
+    min-height: 0;
+    margin-bottom: 12px;
+    align-items: stretch;
+  }
+
+  .container.is-workspace .side,
+  .container.is-workspace #panel-submit {
+    min-height: 0;
+    max-height: 100%;
+    overflow-y: auto;
+  }
+
+  .container.is-workspace .side {
+    padding-right: 4px;
+  }
+
+  /* 判分栏里检查项挤在窄栏里：让它自己换行，别硬撑成一�?*/
+  .container.is-workspace .check-item {
+    padding: 11px 13px;
+  }
+
+  .container.is-workspace .check-item .check-top {
+    flex-wrap: wrap;
+    row-gap: 2px;
+  }
+
+  /* 表格外壳：一条竖着�?flex，网格吃掉中间剩下的高度 */
+  .container.is-workspace .sheet {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .container.is-workspace .sheet > .ribbon-slot,
+  .container.is-workspace .sheet > .sheet-bar,
+  .container.is-workspace .sheet > .sheet-tip,
+  .container.is-workspace .sheet > .sheet-status,
+  .container.is-workspace .sheet > .sheet-tabs {
+    flex: none;
+  }
+
+  .container.is-workspace .sheet-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .container.is-workspace .sheet-grid,
+  .container.is-workspace .sheet-note {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none;
+  }
+}
+
+/* 桌面：题�?/ 表格 / 判分 三栏，各自内部滚动，谁也不挡�?*/
+@media (min-width: 1440px) {
+  .container.is-workspace > .workspace {
+    grid-template-columns: 300px minmax(0, 1fr) 320px;
+    grid-template-areas: "side sheet submit";
+  }
+
+  .container.is-workspace .side {
+    grid-area: side;
+  }
+
+  .container.is-workspace #sheet-host {
+    grid-area: sheet;
+  }
+
+  .container.is-workspace #panel-submit {
+    grid-area: submit;
+  }
+}
+
+/* 中等屏：判分栏挪到表格下方那一条，左栏仍是一整列 */
+@media (min-width: 1024px) and (max-width: 1439px) {
+  .container.is-workspace > .workspace {
+    grid-template-columns: 300px minmax(0, 1fr);
+    /* 表格至少�?360px，判分那条最�?220px；窗口实在太小就让它滚一点，也不把表格压�?*/
+    grid-template-rows: minmax(360px, 1fr) minmax(0, 220px);
+    grid-template-areas:
+      "side sheet"
+      "side submit";
+  }
+
+  .container.is-workspace .side {
+    grid-area: side;
+  }
+
+  .container.is-workspace #sheet-host {
+    grid-area: sheet;
+  }
+
+  .container.is-workspace #panel-submit {
+    grid-area: submit;
+  }
+}
+
+/* ---------- 响应�?---------- */
+
+@media (max-width: 1023px) {
+  .hero {
+    grid-template-columns: 1fr;
+    margin-top: 32px;
+  }
+
+  .hero h1 {
+    font-size: 32px;
+  }
+
+  .stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .features {
+    grid-template-columns: 1fr;
+  }
+
+  .workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .side {
+    max-height: none;
+    overflow: visible;
+  }
+
+  .sheet {
+    display: none;
+  }
+
+  .mobile-note {
+    display: block;
+  }
+
+  .topic-row {
+    grid-template-columns: 1fr auto;
+    row-gap: 10px;
+  }
+
+  .topic-attempts {
+    grid-column: 2;
+  }
+}
+
+/* ========== 排版可读性增�?==========
+ * 目标：正文更舒展、扫读更快、重点一眼可见、层级更清楚�? * 统一的字号与行距基线放在 body 上，后续各组件用相对值呼应�? */
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-size: 16px;
+  line-height: 1.8;
+  letter-spacing: 0.015em;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* ---------- 重点强调：正文里的关键词一眼可�?---------- */
+
+p strong,
+li strong,
+.card-body p strong,
+.card-body li strong,
+.check-msg strong,
+.panel p strong {
+  color: #ffe3eb;
+  font-weight: 700;
+  background: linear-gradient(transparent 62%, rgba(255, 182, 200, 0.28) 62%);
+}
+
+/* 强调句（如需要整句点亮时，用 class="emph"�?*/
+.emph {
+  color: #ffe3eb;
+  font-weight: 700;
+}
+
+/* ---------- 正文段落 ---------- */
+
+p {
+  line-height: 1.85;
+  margin-bottom: 10px;
+}
+
+.panel p,
+.feature-card p,
+.page-head p,
+.card-body p,
+.check-msg,
+.result-banner {
+  font-size: 15px;
+}
+
+/* 段落首行缩进会让扫读更顺，但卡片内简短句不缩�?*/
+.panel p + p,
+.card-body p + p {
+  margin-top: 4px;
+}
+
+/* ---------- 列表扫读 ---------- */
+
+ul,
+ol {
+  padding-left: 22px;
+  line-height: 1.9;
+}
+
+li {
+  margin-bottom: 6px;
+}
+
+li:last-child {
+  margin-bottom: 0;
+}
+
+/* 有序步骤：编号更醒目 */
+.steps li {
+  margin-bottom: 8px;
+  padding-left: 2px;
+  position: relative;
+}
+
+.steps li strong {
+  color: var(--accent);
+}
+
+/* ---------- 标题层级 ---------- */
+
+/* 一级：页面主标�?*/
+h1 {
+  line-height: 1.28;
+  letter-spacing: 0.01em;
+}
+
+/* 二级：区内小标题 */
+h2 {
+  letter-spacing: 0.3px;
+  line-height: 1.35;
+  margin-bottom: 12px;
+}
+
+/* 三级：卡片标�?*/
+h3 {
+  line-height: 1.4;
+}
+
+/* ---------- 卡片内部呼吸空间 ---------- */
+
+.glass {
+  transition: box-shadow 0.25s ease;
+}
+
+/* 可点击卡�?hover 稍微抬一点，明确可点 */
+a.feature-card:hover {
+  box-shadow: 0 12px 38px rgba(0, 0, 0, 0.35);
+}
+
+/* ---------- 练习页：目标强提�?---------- */
+
+.goal-line {
+  font-size: 16px;
+  line-height: 1.85;
+  color: #fff3f6;
+  font-weight: 600;
+  background: linear-gradient(90deg, rgba(255, 182, 200, 0.14), rgba(255, 182, 200, 0.02));
+  border-left: 4px solid var(--accent);
+  padding: 12px 14px;
+  border-radius: 8px;
+  margin-bottom: 14px;
+}
+
+/* 左栏略加宽，长题面不�?*/
+.workspace {
+  grid-template-columns: 360px minmax(0, 1fr);
+}
+
+@media (min-width: 1440px) {
+  .container.is-workspace > .workspace {
+    grid-template-columns: 340px minmax(0, 1fr) 340px;
+  }
+}
+
+@media (min-width: 1024px) and (max-width: 1439px) {
+  .container.is-workspace > .workspace {
+    grid-template-columns: 340px minmax(0, 1fr);
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

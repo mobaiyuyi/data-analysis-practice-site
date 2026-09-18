@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>mobai训练 · 用真实业务练数据分析</title>
+<link rel="stylesheet" href="assets/styles.css?v=3" />
+<style>
+  /* ============================================
+     两层蒙版的不透明度 —— 想调深浅改这里就行
+     --veil-top    : 上半部分（hero 遮罩带），数值越大越白
+     --veil-bottom : 下半部分（全页基础遮罩），数值越大底图越淡
+     取值 0 ~ 1，两者差值越大，中间那条分界线越明显
+     ============================================ */
+  :root {
+    --veil-top: 0.70;
+    --veil-bottom: 0.55;
+  }
+
+  /* ============================================
+     页面基础设置：统一 html 和 body 底色，杜绝底部黑框
+     ============================================ */
+  html, body {
+    margin: 0;
+    padding: 0;
+    min-height: 100%;
+    /* 关键：将底色改为浅色，彻底告别底部黑框 */
+    background-color: #fdfafb; 
+  }
+  
+  html {
+    position: relative; /* 作为全网页覆盖层的定位参考 */
+    overflow-x: hidden;
+  }
+
+  body {
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ============================================
+     全网页渐变白色覆盖层（恢复明显可见的白色遮罩）
+     ============================================ */
+  html::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1; /* 位于 canvas 背景之上，内容容器之下 */
+    pointer-events: none; /* 允许鼠标点击穿透，不影响按钮和选词 */
+    
+    /* 全页基础薄纱：淡，让底图透出来（参考站下半部分没有遮罩，靠卡片自己保证可读） */
+    background-color: rgba(255, 255, 255, var(--veil-bottom));
+  }
+
+  /* ============================================
+     Hero 专属遮罩带 —— 参考站的「分层感」来源
+     参考站给 hero 区单独挂了一层 bg-white/60 + 点阵，
+     下面的 section 没有遮罩，于是交界处形成一条硬边分界线
+     ============================================ */
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: -80px;            /* 顶到页面最上沿，把导航栏也罩进来 */
+    bottom: 20px;          /* 代码块与下方方块之间是 40px 间隙，上收 20px 落在正中间 */
+    left: 50%;
+    width: 100vw;          /* 突破 .container 的 1160px 限制，做成通栏 */
+    transform: translateX(-50%);
+    z-index: -1;
+    pointer-events: none;
+    background-color: rgba(255, 255, 255, var(--veil-top));
+    background-image: radial-gradient(rgba(15, 23, 42, 0.06) 1px, transparent 1px);
+    background-size: 16px 16px;
+  }
+
+  /* ============================================
+     顶部导航 —— 顶部：全宽透明；滚动后：居中胶囊毛玻璃
+     ============================================ */
+  .topbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 1000;
+    padding: 0 20px;
+    pointer-events: none;
+    transition: padding 0.35s ease;
+  }
+
+  .topbar.is-scrolled { padding: 0 20px; }
+
+  .topbar-inner {
+    pointer-events: auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin: 0 auto;
+    max-width: 100%;
+    padding: 16px 28px;
+    border-radius: 0;
+    background: transparent;
+    border: 1px solid transparent;
+    box-shadow: none;
+    backdrop-filter: blur(0px);
+    -webkit-backdrop-filter: blur(0px);
+    transition: all 0.35s ease;
+  }
+
+  .topbar.is-scrolled .topbar-inner {
+    max-width: 1200px;
+    padding: 8px 20px;
+    border-radius: 22px;
+    background: rgba(255, 255, 255, 0.65);
+    border: 1px solid rgba(255, 255, 255, 0.55);
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+  }
+
+  .topbar-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+    color: #1a1a2e;
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+    flex-shrink: 0;
+  }
+  .topbar-logo .logo-mark {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #ff8da5, #ff5a80);
+    color: #fff;
+    font-size: 15px;
+    font-weight: 800;
+    box-shadow: 0 4px 10px -3px rgba(255, 90, 128, 0.5);
+  }
+  .topbar-logo:hover .logo-mark { transform: scale(1.06); }
+
+  .topbar-menu {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: 4px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    transition: background 0.35s ease, border-color 0.35s ease;
+  }
+
+  .topbar.is-scrolled .topbar-menu {
+    background: rgba(255, 255, 255, 0.7);
+    border-color: rgba(0, 0, 0, 0.05);
+  }
+
+  .topbar-menu-item {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 34px;
+    padding: 0 14px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #6b7280;
+    text-decoration: none;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    transition: color 0.2s ease, background 0.2s ease;
+    white-space: nowrap;
+    font-family: inherit;
+  }
+  .topbar-menu-item svg { width: 16px; height: 16px; flex-shrink: 0; stroke-width: 2; }
+  .topbar-menu-item:hover { color: #ff5a80; }
+  .topbar-menu-item.is-active { color: #ff5a80; background: rgba(255, 107, 138, 0.10); }
+
+  .topbar-actions { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+  .topbar-login {
+    color: #6b7280; font-size: 14px; font-weight: 500; text-decoration: none;
+    padding: 6px 12px; border-radius: 10px; transition: color 0.2s ease;
+    cursor: pointer; background: transparent; border: none; font-family: inherit;
+  }
+  .topbar-login:hover { color: #1a1a2e; }
+
+  /* ============================================
+     内容容器
+     ============================================ */
+  .container {
+    padding-top: 80px;
+    position: relative;
+    z-index: 2; /* 确保内容在覆盖层之上 */
+  }
+
+  /* ============================================
+     Hero 布局（居中）
+     ============================================ */
+  .hero {
+    position: relative;    /* 给遮罩带做定位参考 */
+    margin: 0;             /* 清掉 styles.css 里的 56px 上边距，让遮罩带正好顶到页面最上沿 */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    /* 上内边距决定标题在页面上的高度：参考站是 pt-52（208px），这里 80+120 也落在 200px 附近 */
+    padding: 120px 0 40px;
+    gap: 0;
+  }
+
+  /* 标题：超大、超粗、紧排；深色主体 + 关键词渐变——与参考站一致 */
+  .hero h1 {
+    font-size: clamp(40px, 6.4vw, 76px);
+    line-height: 1.12;
+    letter-spacing: -0.03em;
+    color: #1a1a2e;
+    margin: 0 0 40px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  .hero .nav-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    margin-bottom: 48px;
+  }
+
+  .hero .nav-buttons .btn {
+    height: 52px;
+    padding: 0 32px;
+    font-size: 16px;
+    font-weight: 600;
+    border-radius: 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    border: 1px solid transparent;
+    outline: none;
+    white-space: nowrap;
+  }
+
+  .hero .nav-buttons .btn-primary {
+    background: #111827;
+    color: #ffffff;
+    border-color: rgba(17, 24, 39, 0.4);
+    box-shadow: 0 8px 20px -8px rgba(17, 24, 39, 0.5);
+  }
+  .hero .nav-buttons .btn-primary:hover {
+    background: #1f2937;
+    box-shadow: 0 12px 26px -8px rgba(17, 24, 39, 0.55);
+    transform: translateY(-1px);
+  }
+  .hero .nav-buttons .btn-primary:active { transform: translateY(0); }
+
+  .hero .nav-buttons .btn-secondary {
+    background: rgba(255, 255, 255, 0.85);
+    color: #1a1a2e;
+    border-color: rgba(0, 0, 0, 0.08);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+    backdrop-filter: blur(8px);
+  }
+  .hero .nav-buttons .btn-secondary:hover {
+    background: #ffffff;
+    border-color: rgba(0, 0, 0, 0.12);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+    transform: translateY(-1px);
+  }
+
+  .hero .nav-buttons .btn-primary .arrow { display: inline-block; transition: transform 0.25s ease; }
+  .hero .nav-buttons .btn-primary:hover .arrow { transform: translateX(3px); }
+
+  /* ============================================
+     代码卡片
+     ============================================ */
+  .code-wrap { position: relative; width: 100%; max-width: 960px; margin: 0 auto; }
+  .code-glow {
+    position: absolute;
+    inset: -16px;
+    border-radius: 24px;
+    background: linear-gradient(to right, rgba(255, 107, 138, 0.10), transparent, rgba(255, 107, 138, 0.10));
+    filter: blur(24px);
+    z-index: 0;
+    pointer-events: none;
+  }
+  .code-card-outer {
+    position: relative; z-index: 1;
+    background: rgba(255, 255, 255, 0.40);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(255, 255, 255, 0.30);
+    border-radius: 16px;
+    padding: 4px;
+    box-shadow: 0 25px 50px -12px rgba(255, 107, 138, 0.05);
+  }
+  .code-card-inner {
+    background: rgba(255, 255, 255, 0.40);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .code-file-bar {
+    display: flex; align-items: center; gap: 8px; padding: 8px 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.20); background: rgba(255, 255, 255, 0.20);
+  }
+  .code-dots { display: flex; gap: 6px; }
+  .code-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .code-dot-red { background: rgba(248, 113, 113, 0.80); }
+  .code-dot-amber { background: rgba(250, 204, 21, 0.80); }
+  .code-dot-green { background: rgba(74, 222, 128, 0.80); }
+  .code-file-name-wrap { flex: 1; text-align: center; }
+  .code-file-name { font-family: "SF Mono", "Fira Code", Consolas, monospace; font-size: 11px; color: #6b7280; }
+  .code-body {
+    padding: 12px 24px 16px;
+    font-family: "SF Mono", "Fira Code", "JetBrains Mono", Consolas, Menlo, monospace;
+    font-size: 13px; line-height: 1.45;
+    color: rgba(17, 24, 39, 0.80); overflow-x: auto; text-align: left;
+  }
+  .code-body > div { white-space: pre; }
+  .code-body .pl-6 { padding-left: 22px; }
+  .code-body .pl-10 { padding-left: 36px; }
+  .code-body .pl-14 { padding-left: 50px; }
+  .code-body .pl-16 { padding-left: 58px; }
+  .tk-purple { color: #8b5cf6; } .tk-blue { color: #3b82f6; } .tk-green { color: #10b981; } .tk-amber { color: #f59e0b; } .tk-default { color: inherit; }
+
+  .stats, .features, .cta { width: 100%; }
+
+  /* ============================================
+     玻璃卡片 —— 参考站同款浅色玻璃
+     --glass-opacity:0.83 / --glass-blur:15px / --glass-saturation:170%
+     卡片近白不透底，文字用深色，保证和参考站一样清晰
+     ============================================ */
+  .glass {
+    background: rgba(255, 255, 255, 0.83);
+    backdrop-filter: blur(15px) saturate(170%);
+    -webkit-backdrop-filter: blur(15px) saturate(170%);
+    border: 1px solid rgba(255, 255, 255, 0.55);
+    border-radius: 18px;
+    box-shadow: 0 6px 20px rgba(15, 23, 42, 0.06);
+  }
+
+  /* ============================================
+     统计区 —— 参考站同款「一整块卡片 + 背后粉色辉光」
+     参考站原结构：
+       <div class="absolute inset-0 bg-gradient-to-r from-primary/5 via-primary/10
+                   to-primary/5 rounded-3xl blur-xl"></div>      <- 辉光层
+       <div class="relative bg-card/30 backdrop-blur-xl
+                   border border-border/30 rounded-3xl p-8 md:p-12">  <- 卡片层
+     粉色底不是卡片自己的背景，是背后那层辉光透过 30% 白卡 + 强模糊渗上来的
+     ============================================ */
+  .stats {
+    position: relative;
+    display: block;   /* 覆盖 styles.css 的 grid：4 张独立卡改成一整块 */
+    margin-bottom: 48px;
+  }
+  /* 辉光层：向外扩散 24px，形成柔和粉色光晕。
+     参考站是 5%/10%，但它下半部分没有全页白纱；本页有 50% 白纱打底，
+     同样的浓度会被冲淡到看不见，所以这里放大到 14%/28% 来补偿 */
+  .stats-glow {
+    position: absolute;
+    inset: 0;
+    border-radius: 24px;
+    background: linear-gradient(
+      to right,
+      rgba(233, 73, 126, 0.14),
+      rgba(233, 73, 126, 0.28),
+      rgba(233, 73, 126, 0.14)
+    );
+    filter: blur(24px);
+  }
+  /* 卡片层：只有 30% 白，靠 backdrop-blur 把背后的辉光晕开成淡粉底 */
+  .stats-inner {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 32px;
+    padding: 48px;
+    border-radius: 24px;
+    background: rgba(255, 255, 255, 0.3);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(231, 228, 229, 0.3);
+  }
+  .stat-card { padding: 0; text-align: center; }
+  .stat-num {
+    font-size: 36px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    background: linear-gradient(135deg, #e9497e, #fb7185);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .stat-label { font-size: 14px; color: #7a7173; }
+
+  .feature-card {
+    padding: 26px;
+    border-radius: 18px;
+    color: #1a1a2e;
+    transition: transform 0.28s ease, box-shadow 0.28s ease, border-color 0.28s ease;
+  }
+  .feature-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 14px 32px rgba(15, 23, 42, 0.10);
+    border-color: rgba(255, 107, 138, 0.35);
+  }
+  .feature-card h3 {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1a1a2e;
+    margin-bottom: 10px;
+  }
+  .feature-card p {
+    font-size: 15px;
+    line-height: 1.75;
+    color: #6b7280;
+  }
+  /* 未开放卡片：整卡保持不透明，只把标题/正文压淡来区分。
+     比 opacity+文字更清晰，也不像整块半透明那样发糊 */
+  .feature-card.is-locked { opacity: 1; }
+  .feature-card.is-locked h3 { color: #9aa0b0; }
+  .feature-card.is-locked p { color: #b5bac7; }
+
+  .tag {
+    background: rgba(15, 23, 42, 0.04);
+    border-color: rgba(15, 23, 42, 0.10);
+    color: #6b7280;
+    font-weight: 500;
+  }
+  .tag.is-live {
+    background: rgba(16, 185, 129, 0.10);
+    border-color: rgba(16, 185, 129, 0.28);
+    color: #059669;
+  }
+
+  .cta h2 { color: #1a1a2e; }
+  .cta p { color: #6b7280; }
+
+  /* CTA 里的主按钮：与参考站一致，实心深色 */
+  .btn-dark {
+    height: 46px;
+    padding: 0 28px;
+    font-size: 15px;
+    font-weight: 600;
+    border-radius: 12px;
+    background: #111827;
+    color: #fff;
+    box-shadow: 0 8px 20px -8px rgba(17, 24, 39, 0.5);
+  }
+  .btn-dark:hover { background: #1f2937; }
+
+  /* 代码卡片也跟着提到近白，别在浅底上发灰 */
+  .code-card-outer {
+    background: rgba(255, 255, 255, 0.83);
+    border-color: rgba(255, 255, 255, 0.55);
+    box-shadow: 0 20px 45px -18px rgba(15, 23, 42, 0.18);
+  }
+  .code-card-inner { background: rgba(255, 255, 255, 0.55); }
+  .code-file-bar {
+    background: rgba(255, 255, 255, 0.55);
+    border-bottom-color: rgba(15, 23, 42, 0.06);
+  }
+
+  /* ============================================
+     响应式
+     ============================================ */
+  @media (max-width: 768px) {
+    .topbar, .topbar.is-scrolled { padding: 0 12px; }
+    .topbar-inner { padding: 12px 16px; border-radius: 0; }
+    .topbar.is-scrolled .topbar-inner { padding: 8px 14px; border-radius: 18px; max-width: 100%; }
+    .topbar-logo { font-size: 17px; }
+    .topbar-logo .logo-mark { width: 24px; height: 24px; font-size: 13px; }
+    .topbar-menu { display: none; }
+    .topbar-login { font-size: 13px; padding: 5px 8px; }
+    .container { padding-top: 68px; }
+    /* 移动端 .container 上内边距是 68px，遮罩带跟着上移这么多才能顶到最上沿；
+       下边 .hero padding-bottom 缩到 30px，所以上收 15px 落在正中间 */
+    .hero::before { top: -68px; bottom: 15px; }
+    .hero h1 { font-size: 34px; letter-spacing: -0.02em; margin-bottom: 28px; }
+    .hero { padding: 70px 0 30px; }
+    /* 统计区在窄屏塌成 2×2；参考站对应 text-3xl（30px） */
+    .stats-inner { grid-template-columns: repeat(2, 1fr); gap: 24px; padding: 28px; }
+    .stat-num { font-size: 30px; }
+    .hero .nav-buttons .btn { height: 46px; padding: 0 24px; font-size: 15px; }
+    .code-body { font-size: 11px; padding: 10px 14px; }
+    .code-body .pl-6 { padding-left: 14px; }
+    .code-body .pl-10 { padding-left: 24px; }
+    .code-body .pl-14 { padding-left: 36px; }
+    .code-body .pl-16 { padding-left: 44px; }
+  }
+</style>
+</head>
+<body>
+  <!-- 背景 Canvas -->
+  <canvas id="sakuraCanvas"></canvas>
+  
+  <div class="container">
+    <header class="topbar" id="topbar">
+      <div class="topbar-inner">
+        <a href="index.html" class="topbar-logo">
+          <span class="logo-mark">m</span>
+          <span>研数通途</span>
+        </a>
+        <nav class="topbar-menu">
+          <a href="index.html" class="topbar-menu-item is-active">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5"/>
+            </svg>首页
+          </a>
+          <button class="topbar-menu-item" type="button">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6"/><path d="M9 16h4"/>
+            </svg>练习
+          </button>
+          <button class="topbar-menu-item" type="button">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="5" r="2"/><circle cx="5" cy="19" r="2"/><circle cx="19" cy="19" r="2"/><path d="M12 7v4"/><path d="M12 11 6.5 17"/><path d="M12 11l5.5 6"/>
+            </svg>技能树
+          </button>
+          <button class="topbar-menu-item" type="button">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/>
+            </svg>关于
+          </button>
+        </nav>
+        <div class="topbar-actions">
+          <button class="topbar-login" type="button">登录</button>
+        </div>
+      </div>
+    </header>
+
+    <section class="hero">
+      <h1>用真实业务<br /><span class="grad">练出数据分析的手感</span></h1>
+      <div class="nav-buttons">
+        <button class="btn btn-primary" id="btn-continue2" type="button">继续练习 <span class="arrow">→</span></button>
+        <button class="btn btn-secondary" id="btn-tree2" type="button">技能树</button>
+      </div>
+      <div class="code-wrap">
+        <div class="code-glow"></div>
+        <div class="code-card-outer">
+          <div class="code-card-inner">
+            <div class="code-file-bar">
+              <div class="code-dots">
+                <div class="code-dot code-dot-red"></div><div class="code-dot code-dot-amber"></div><div class="code-dot code-dot-green"></div>
+              </div>
+              <div class="code-file-name-wrap"><span class="code-file-name">pandas_clean.py</span></div>
+            </div>
+            <div class="code-body">
+              <div><span class="tk-purple">import</span><span class="tk-default"> pandas </span><span class="tk-purple">as</span><span class="tk-default"> pd</span></div>
+              <div> </div>
+              <div><span class="tk-default"># 读取云栖茶饮的订单表</span></div>
+              <div><span class="tk-default">df = pd.read_excel(</span><span class="tk-green">"orders.xlsx"</span><span class="tk-default">)</span></div>
+              <div> </div>
+              <div><span class="tk-default"># 先看看数据长什么样</span></div>
+              <div><span class="tk-blue">print</span><span class="tk-default">(df.info())</span></div>
+              <div><span class="tk-blue">print</span><span class="tk-default">(df.head())</span></div>
+              <div> </div>
+              <div><span class="tk-default"># 处理缺失值：金额列填充 0，门店列用「未知」填充</span></div>
+              <div><span class="tk-default">df[</span><span class="tk-green">"金额"</span><span class="tk-default">] = df[</span><span class="tk-green">"金额"</span><span class="tk-default">].fillna(</span><span class="tk-amber">0</span><span class="tk-default">)</span></div>
+              <div><span class="tk-default">df[</span><span class="tk-green">"门店"</span><span class="tk-default">] = df[</span><span class="tk-green">"门店"</span><span class="tk-default">].fillna(</span><span class="tk-green">"未知"</span><span class="tk-default">)</span></div>
+              <div> </div>
+              <div><span class="tk-default"># 筛选出有效订单（金额 &gt; 0 且 状态为「已完成」）</span></div>
+              <div><span class="tk-default">valid_orders = df[(df[</span><span class="tk-green">"金额"</span><span class="tk-default">] &gt; </span><span class="tk-amber">0</span><span class="tk-default">) &amp; (df[</span><span class="tk-green">"状态"</span><span class="tk-default">] == </span><span class="tk-green">"已完成"</span><span class="tk-default">)]</span></div>
+              <div> </div>
+              <div><span class="tk-default"># 按门店分组汇总销售额</span></div>
+              <div><span class="tk-default">store_sales = valid_orders.groupby(</span><span class="tk-green">"门店"</span><span class="tk-default">)[</span><span class="tk-green">"金额"</span><span class="tk-default">].sum().reset_index()</span></div>
+              <div><span class="tk-default">store_sales = store_sales.sort_values(</span><span class="tk-green">"金额"</span><span class="tk-default">, ascending=</span><span class="tk-purple">False</span><span class="tk-default">)</span></div>
+              <div><span class="tk-blue">print</span><span class="tk-default">(store_sales)</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="stats">
+      <div class="stats-glow"></div>
+      <div class="stats-inner">
+        <div class="stat-card"><div class="stat-num" id="stat-passed">0</div><div class="stat-label">已通过考点</div></div>
+        <div class="stat-card"><div class="stat-num" id="stat-streak">0</div><div class="stat-label">连续练习天数</div></div>
+        <div class="stat-card"><div class="stat-num" id="stat-pending">0</div><div class="stat-label">待攻克判分项</div></div>
+        <div class="stat-card"><div class="stat-num" id="stat-attempts">0</div><div class="stat-label">累计提交次数</div></div>
+      </div>
+    </section>
+
+    <section class="features">
+      <a class="feature-card glass" href="excel.html">
+        <h3>Excel 练习<span class="tag is-live">进行中</span></h3>
+        <p>10 道题，从数据类型识别到 IFERROR 防呆。每题一份云栖茶饮的真表，判分看的是值、函数和引用结构。</p>
+      </a>
+      <div class="feature-card glass is-locked">
+        <h3>SQL<span class="tag">即将开放</span></h3>
+        <p>同一批业务问题换成从数据库里问。等 Excel 那 10 题走完再开。</p>
+      </div>
+      <div class="feature-card glass is-locked">
+        <h3>Python · Pandas<span class="tag">即将开放</span></h3>
+        <p>表变大到 Excel 拖不动的时候，就该换个工具了。</p>
+      </div>
+      <div class="feature-card glass is-locked">
+        <h3>数据可视化<span class="tag">即将开放</span></h3>
+        <p>不是把图画得好看，而是先想清楚这张图要回答什么问题。</p>
+      </div>
+      <div class="feature-card glass is-locked">
+        <h3>综合案例<span class="tag">即将开放</span></h3>
+        <p>一份需求、一堆脏数据、一个截止时间，从头做到尾。</p>
+      </div>
+    </section>
+
+    <section class="cta glass">
+      <h2>第 1 题只有 8 分钟</h2>
+      <p>进度只存在你这台电脑的浏览器里，不上传任何地方。</p>
+      <button class="btn btn-primary btn-dark" id="btn-start" type="button">开始第一题</button>
+    </section>
+  </div>
+
+  <script src="assets/sakura.js"></script>
+  <script src="js/formula/utils.js"></script>
+  <script src="js/progress.js"></script>
+  <script src="js/page-home.js"></script>
+
+  <script>
+    (function () {
+      var topbar = document.getElementById('topbar');
+      var ticking = false;
+      function updateTopbar() {
+        if (window.scrollY > 10) {
+          topbar.classList.add('is-scrolled');
+        } else {
+          topbar.classList.remove('is-scrolled');
+        }
+        ticking = false;
+      }
+      window.addEventListener('scroll', function () {
+        if (!ticking) {
+          window.requestAnimationFrame(updateTopbar);
+          ticking = true;
+        }
+      });
+      updateTopbar();
+    })();
+  </script>
+</body>
+</html>

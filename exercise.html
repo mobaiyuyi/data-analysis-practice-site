@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>练习 · mobai训练</title>
+<link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body class="is-workspace">
+  <canvas id="sakuraCanvas"></canvas>
+
+  <div class="container is-workspace">
+    <nav class="glass">
+      <div class="nav-title"><a href="index.html">mobai训练</a></div>
+      <div class="nav-buttons">
+        <a class="btn btn-secondary" href="excel.html">考点清单</a>
+        <button class="btn btn-ghost" id="btn-continue" type="button">继续上次</button>
+      </div>
+    </nav>
+
+    <section class="exercise-head glass">
+      <div>
+        <h1 id="ex-title">正在加载……</h1>
+        <div class="meta" id="ex-meta"></div>
+      </div>
+      <div class="nav-buttons">
+        <button class="btn btn-ghost" id="btn-prev" type="button">上一题</button>
+        <button class="btn btn-ghost" id="btn-next" type="button">下一题</button>
+      </div>
+    </section>
+
+    <section class="workspace">
+      <div class="side">
+        <div class="panel glass">
+          <h2>发生了什么</h2>
+          <p id="ex-background"></p>
+        </div>
+
+        <div class="panel glass">
+          <h2>你要做到的</h2>
+          <p class="goal-line" id="ex-goal"></p>
+          <ol class="steps" id="ex-steps"></ol>
+        </div>
+
+        <details class="card-details glass" id="ex-card">
+          <summary id="ex-card-title">知识点卡</summary>
+          <div class="card-body" id="ex-card-body"></div>
+        </details>
+      </div>
+
+      <div class="glass sheet" id="sheet-host"></div>
+
+      <div class="panel glass" id="panel-submit">
+        <h2>判分</h2>
+        <p>三类检查项——算对了吗、用对工具了吗、能维护吗——全部通过，这道题才算过。表格改动之后结果会清空，重新点一次提交。</p>
+        <div class="submit-bar">
+          <button class="btn btn-primary" id="btn-submit" type="button">提交</button>
+          <button class="btn btn-ghost" id="btn-reset" type="button">恢复原状</button>
+        </div>
+        <div class="check-list" id="check-list"></div>
+        <div id="result"></div>
+      </div>
+
+      <div class="mobile-note glass">
+        <h2>手机上只能看，不能练</h2>
+        <p>
+          表格编辑要拖列宽、按 F2、用 Ctrl+D，手机屏幕放不下这些操作，所以这里只给你看题目、
+          知识点卡和进度。回到电脑上打开这一页就能动手做题了——进度是按题存着的，不会丢。
+        </p>
+      </div>
+    </section>
+  </div>
+
+  <script src="assets/sakura.js"></script>
+  <script src="js/formula/utils.js"></script>
+  <script src="js/formula/errors.js"></script>
+  <script src="js/formula/parser.js"></script>
+  <script src="js/formula/functions.js"></script>
+  <script src="js/format.js"></script>
+  <script src="js/fill.js"></script>
+  <script src="js/formula/evaluator.js"></script>
+  <script src="js/grading.js"></script>
+  <script src="js/progress.js"></script>
+  <script src="js/sheet.js"></script>
+  <script src="js/ribbon.js"></script>
+  <script src="data/universe.js"></script>
+  <script src="data/cards.js"></script>
+  <script src="data/exercises.js"></script>
+  <script src="js/page-exercise.js"></script>
+</body>
+</html>
