@@ -1,4 +1,4 @@
-/* mobai训练 · 判分
+/* 研数通途 · 判分
  * 三类检查项，无权重，全部通过才算这道题通过。
  *   cell_values        算对了吗
  *   formula_functions  用对工具了吗

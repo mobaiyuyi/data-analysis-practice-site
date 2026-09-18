@@ -1,4 +1,4 @@
-/* mobai训练 · 练习页
+/* 研数通途 · 练习页
  * 左栏是题面与判分，右栏是表格。表格一改，上一次的判分结论就作废（清空），
  * 免得看着旧的绿字以为已经过了。
  * 手机（<1024px）不挂表格，只留题面、知识卡与进度——编辑要靠键盘，手机给不了。
@@ -57,7 +57,7 @@
   }
 
   function renderHead() {
-    document.title = ex.title + ' · mobai训练';
+    document.title = ex.title + ' · 研数通途';
     byId('ex-title').textContent = ex.title;
     renderMeta();
     byId('ex-background').textContent = ex.background;

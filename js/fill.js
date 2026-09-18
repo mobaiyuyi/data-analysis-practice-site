@@ -1,4 +1,4 @@
-/* mobai训练 · 填充与引用改写
+/* 研数通途 · 填充与引用改写
  * 三件事，都是纯函数（tools/verify.js 直接测）：
  *   shiftFormulaText  公式里的相对引用按 (dCol,dRow) 平移
  *   transformRefs     把公式里每个引用交给回调重写（插入/删除行列时用）
