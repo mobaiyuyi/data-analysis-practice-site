@@ -1,5 +1,5 @@
 # 明确不上传的目录
-不上传github/
+loss/
 .agents/
 .vscode/
 
